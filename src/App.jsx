@@ -19,6 +19,7 @@ import SearchingHome from "./modules/searching/pages/SearchingHome";
 
 // Arrays Module
 import ArraysHome from "./modules/arrays/pages/ArraysHome";
+import ArrayOperations from "./modules/arrays/pages/ArrayOperations";
 
 // Scroll Helper
 import ScrollToTop from "./components/ScrollToTop";
@@ -47,6 +48,8 @@ function App() {
 
         {/* Arrays */}
         <Route path="/learn/arrays" element={<ArraysHome />} />
+        <Route path="/learn/arrays/operations" element={<ArrayOperations />} />
+        <Route path="/learn/arrays/insertion-deletion" element={<ArrayOperations />} />
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
