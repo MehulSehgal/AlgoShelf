@@ -53,6 +53,7 @@ export default function ArraysHome() {
       complexity: "O(n)",
       difficulty: "Beginner",
       path: "/learn/arrays/traversal",
+      comingSoon: true,
     },
   ];
 

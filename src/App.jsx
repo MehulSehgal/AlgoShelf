@@ -49,7 +49,6 @@ function App() {
         {/* Arrays */}
         <Route path="/learn/arrays" element={<ArraysHome />} />
         <Route path="/learn/arrays/operations" element={<ArrayOperations />} />
-        <Route path="/learn/arrays/insertion-deletion" element={<ArrayOperations />} />
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
