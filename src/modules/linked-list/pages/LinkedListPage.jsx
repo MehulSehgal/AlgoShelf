@@ -8,6 +8,7 @@ import LinkedListStepExplanation from "../components/LinkedListStepExplanation";
 import {
   buildLinkedList,
   linkedListToArray,
+  cloneLinkedList,
   LinkedListNode,
 } from "../utils/linkedListEngine";
 import { INITIAL_LINKED_LIST } from "../data/linkedListData";
@@ -28,9 +29,9 @@ export default function LinkedListPage() {
   // 1. Insert Beginning (Head)
   const handleInsertBeginning = (val) => {
     setError(null);
-    const newNode = new LinkedListNode(val);
-    newNode.next = head;
-    setHead(newNode);
+    const newHead = new LinkedListNode(val);
+    newHead.next = cloneLinkedList(head);
+    setHead(newHead);
 
     setHighlightedIndex(0);
     setHighlightType("insert");
@@ -51,11 +52,13 @@ export default function LinkedListPage() {
       setHead(newNode);
       setHighlightedIndex(0);
     } else {
-      let curr = head;
+      const cloned = cloneLinkedList(head);
+      let curr = cloned;
       while (curr.next) {
         curr = curr.next;
       }
       curr.next = newNode;
+      setHead(cloned);
       setHighlightedIndex(nodes.length);
     }
 
@@ -81,14 +84,16 @@ export default function LinkedListPage() {
       return;
     }
 
+    const cloned = cloneLinkedList(head);
     const newNode = new LinkedListNode(val);
-    let curr = head;
+    let curr = cloned;
     for (let i = 0; i < pos - 1; i++) {
       curr = curr.next;
     }
 
     newNode.next = curr.next;
     curr.next = newNode;
+    setHead(cloned);
 
     setHighlightedIndex(pos);
     setHighlightType("insert");
@@ -112,7 +117,7 @@ export default function LinkedListPage() {
     setHighlightType("delete");
 
     setTimeout(() => {
-      setHead(head.next);
+      setHead(cloneLinkedList(head.next));
       setHighlightedIndex(null);
       setLastAction({
         type: "delete_beginning",
@@ -146,7 +151,8 @@ export default function LinkedListPage() {
       return;
     }
 
-    let curr = head;
+    const cloned = cloneLinkedList(head);
+    let curr = cloned;
     while (curr.next && curr.next.next) {
       curr = curr.next;
     }
@@ -157,6 +163,7 @@ export default function LinkedListPage() {
 
     setTimeout(() => {
       curr.next = null;
+      setHead(cloned);
       setHighlightedIndex(null);
       setLastAction({
         type: "delete_end",
@@ -179,7 +186,8 @@ export default function LinkedListPage() {
       return;
     }
 
-    let curr = head;
+    const cloned = cloneLinkedList(head);
+    let curr = cloned;
     for (let i = 0; i < pos - 1; i++) {
       curr = curr.next;
     }
@@ -190,6 +198,7 @@ export default function LinkedListPage() {
 
     setTimeout(() => {
       curr.next = curr.next.next;
+      setHead(cloned);
       setHighlightedIndex(null);
       setLastAction({
         type: "delete_position",
