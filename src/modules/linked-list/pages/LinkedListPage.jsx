@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import Footer from "../../../components/Footer";
@@ -8,7 +8,6 @@ import LinkedListStepExplanation from "../components/LinkedListStepExplanation";
 import {
   buildLinkedList,
   linkedListToArray,
-  cloneLinkedList,
   LinkedListNode,
 } from "../utils/linkedListEngine";
 import { INITIAL_LINKED_LIST } from "../data/linkedListData";
@@ -24,13 +23,25 @@ export default function LinkedListPage() {
     pointerCode: "head ──> [15] ──> [30] ──> [45] ──> [60] ──> null",
   });
 
+  // Track any pending deletion-animation timer so we can cancel it.
+  const pendingTimerRef = useRef(null);
+
+  const clearPendingTimer = () => {
+    if (pendingTimerRef.current !== null) {
+      clearTimeout(pendingTimerRef.current);
+      pendingTimerRef.current = null;
+    }
+  };
+
   const nodes = linkedListToArray(head);
 
-  // 1. Insert Beginning (Head)
+  // 1. Insert Beginning (Head) — O(1): no full-list clone needed
   const handleInsertBeginning = (val) => {
+    clearPendingTimer();
     setError(null);
+    // Simply point the new node at the existing head; no cloning required.
     const newHead = new LinkedListNode(val);
-    newHead.next = cloneLinkedList(head);
+    newHead.next = head;
     setHead(newHead);
 
     setHighlightedIndex(0);
@@ -43,8 +54,18 @@ export default function LinkedListPage() {
     setTimeout(() => setHighlightedIndex(null), 800);
   };
 
+  // Helper: schedule a deletion animation with proper timer cleanup
+  const scheduleDeleteFinalize = (finalize) => {
+    clearPendingTimer();
+    pendingTimerRef.current = setTimeout(() => {
+      pendingTimerRef.current = null;
+      finalize();
+    }, 300);
+  };
+
   // 2. Insert End (Tail)
   const handleInsertEnd = (val) => {
+    clearPendingTimer();
     setError(null);
     const newNode = new LinkedListNode(val);
 
@@ -52,13 +73,22 @@ export default function LinkedListPage() {
       setHead(newNode);
       setHighlightedIndex(0);
     } else {
-      const cloned = cloneLinkedList(head);
-      let curr = cloned;
-      while (curr.next) {
-        curr = curr.next;
+      // Clone to avoid mutating React state directly during traversal
+      let tail = head;
+      while (tail.next) {
+        tail = tail.next;
       }
-      curr.next = newNode;
-      setHead(cloned);
+      // Build a new list with the new tail appended immutably
+      const newList = new LinkedListNode(head.value);
+      let writePtr = newList;
+      let readPtr = head.next;
+      while (readPtr) {
+        writePtr.next = new LinkedListNode(readPtr.value);
+        writePtr = writePtr.next;
+        readPtr = readPtr.next;
+      }
+      writePtr.next = newNode;
+      setHead(newList);
       setHighlightedIndex(nodes.length);
     }
 
@@ -84,16 +114,11 @@ export default function LinkedListPage() {
       return;
     }
 
-    const cloned = cloneLinkedList(head);
-    const newNode = new LinkedListNode(val);
-    let curr = cloned;
-    for (let i = 0; i < pos - 1; i++) {
-      curr = curr.next;
-    }
-
-    newNode.next = curr.next;
-    curr.next = newNode;
-    setHead(cloned);
+    clearPendingTimer();
+    // Rebuild the list immutably, splicing newNode at pos
+    const arr = linkedListToArray(head);
+    arr.splice(pos, 0, val);
+    setHead(buildLinkedList(arr));
 
     setHighlightedIndex(pos);
     setHighlightType("insert");
@@ -105,7 +130,7 @@ export default function LinkedListPage() {
     setTimeout(() => setHighlightedIndex(null), 800);
   };
 
-  // 4. Delete Beginning (Head)
+  // 4. Delete Beginning (Head) — O(1): just advance head pointer
   const handleDeleteBeginning = () => {
     if (!head) {
       setError("Cannot delete: linked list is empty.");
@@ -113,18 +138,20 @@ export default function LinkedListPage() {
     }
     setError(null);
     const removedVal = head.value;
+    // Capture the successor before the state update closes over it
+    const successor = head.next;
     setHighlightedIndex(0);
     setHighlightType("delete");
 
-    setTimeout(() => {
-      setHead(cloneLinkedList(head.next));
+    scheduleDeleteFinalize(() => {
+      setHead(successor);
       setHighlightedIndex(null);
       setLastAction({
         type: "delete_beginning",
         message: `Deleted head node (${removedVal}). Head pointer moved to head.next.`,
         pointerCode: `head = head.next; // O(1) time`,
       });
-    }, 300);
+    });
   };
 
   // 5. Delete End (Tail)
@@ -139,7 +166,7 @@ export default function LinkedListPage() {
       const removedVal = head.value;
       setHighlightedIndex(0);
       setHighlightType("delete");
-      setTimeout(() => {
+      scheduleDeleteFinalize(() => {
         setHead(null);
         setHighlightedIndex(null);
         setLastAction({
@@ -147,30 +174,25 @@ export default function LinkedListPage() {
           message: `Deleted solitary node (${removedVal}). List is now empty.`,
           pointerCode: `head = null;`,
         });
-      }, 300);
+      });
       return;
     }
 
-    const cloned = cloneLinkedList(head);
-    let curr = cloned;
-    while (curr.next && curr.next.next) {
-      curr = curr.next;
-    }
-
-    const removedVal = curr.next.value;
-    setHighlightedIndex(nodes.length - 1);
+    // Rebuild list without the last element (immutable)
+    const arr = linkedListToArray(head);
+    const removedVal = arr[arr.length - 1];
+    setHighlightedIndex(arr.length - 1);
     setHighlightType("delete");
 
-    setTimeout(() => {
-      curr.next = null;
-      setHead(cloned);
+    scheduleDeleteFinalize(() => {
+      setHead(buildLinkedList(arr.slice(0, -1)));
       setHighlightedIndex(null);
       setLastAction({
         type: "delete_end",
         message: `Deleted tail node (${removedVal}). Second-to-last node.next set to null.`,
         pointerCode: `prevToTail.next = null; // O(n) traversal`,
       });
-    }, 300);
+    });
   };
 
   // 6. Delete At Position
@@ -186,29 +208,26 @@ export default function LinkedListPage() {
       return;
     }
 
-    const cloned = cloneLinkedList(head);
-    let curr = cloned;
-    for (let i = 0; i < pos - 1; i++) {
-      curr = curr.next;
-    }
-
-    const removedVal = curr.next.value;
+    const arr = linkedListToArray(head);
+    const removedVal = arr[pos];
     setHighlightedIndex(pos);
     setHighlightType("delete");
 
-    setTimeout(() => {
-      curr.next = curr.next.next;
-      setHead(cloned);
+    scheduleDeleteFinalize(() => {
+      arr.splice(pos, 1);
+      setHead(buildLinkedList(arr));
       setHighlightedIndex(null);
       setLastAction({
         type: "delete_position",
         message: `Deleted node (${removedVal}) at position [${pos}]. Pointer bypassed target node.`,
         pointerCode: `prev.next = targetNode.next; // O(pos)`,
       });
-    }, 300);
+    });
   };
 
   const handleReset = () => {
+    // Cancel any in-flight deletion animation before resetting
+    clearPendingTimer();
     setHead(buildLinkedList(INITIAL_LINKED_LIST));
     setHighlightedIndex(null);
     setHighlightType(null);
@@ -272,7 +291,6 @@ export default function LinkedListPage() {
             nodes={nodes}
             highlightedIndex={highlightedIndex}
             highlightType={highlightType}
-            onNodeClick={(idx) => handleDeleteAtPosition(idx)}
           />
         </section>
 
