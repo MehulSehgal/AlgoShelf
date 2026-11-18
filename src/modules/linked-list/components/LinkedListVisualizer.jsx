@@ -5,7 +5,6 @@ export default function LinkedListVisualizer({
   nodes = [],
   highlightedIndex = null,
   highlightType = null,
-  onNodeClick = null,
 }) {
   if (nodes.length === 0) {
     return (
@@ -47,93 +46,96 @@ export default function LinkedListVisualizer({
       </div>
 
       {/* Main Chain Visualizer */}
-      <div className="mt-8 flex items-center justify-start overflow-x-auto pb-6 pt-4">
-        <div className="flex items-center gap-2 min-w-full">
+      <div className="mt-8 overflow-x-auto pb-6 pt-4">
+        <div className="flex items-center gap-2 min-w-max">
           {/* Head Label */}
-          <div className="flex flex-col items-center justify-center rounded-lg bg-[#E6EFE6] px-2.5 py-1.5 font-mono text-xs font-bold text-[#2D4B34] border border-[#C5DDC5]">
+          <div className="flex flex-col items-center justify-center rounded-lg bg-[#E6EFE6] px-2.5 py-1.5 font-mono text-xs font-bold text-[#2D4B34] border border-[#C5DDC5] shrink-0 self-start mt-4">
             <span>HEAD</span>
             <span className="text-[10px] text-[#4B7754]">▼</span>
           </div>
 
-          <AnimatePresence>
-            {nodes.map((node, idx) => {
-              const isHighlighted = highlightedIndex === idx;
-              const isTail = idx === nodes.length - 1;
+          <div className="flex items-start">
+            <AnimatePresence mode="popLayout">
+              {nodes.map((node, idx) => {
+                const isHighlighted = highlightedIndex === idx;
+                const isTail = idx === nodes.length - 1;
 
-              let nodeBorder = "border-[#D8CDBD]";
-              let nodeBg = "bg-white";
-              let textColor = "text-[#1F1B18]";
+                let nodeBorder = "border-[#D8CDBD]";
+                let nodeBg = "bg-white";
+                let textColor = "text-[#1F1B18]";
 
-              if (isHighlighted) {
-                if (highlightType === "insert") {
-                  nodeBorder = "border-[#4B7754]";
-                  nodeBg = "bg-[#E6EFE6]";
-                  textColor = "text-[#2D4B34]";
-                } else if (highlightType === "delete") {
-                  nodeBorder = "border-[#DC2626]";
-                  nodeBg = "bg-[#FEE2E2]";
-                  textColor = "text-[#991B1B]";
-                } else {
-                  nodeBorder = "border-[#D97706]";
-                  nodeBg = "bg-[#FEF3C7]";
-                  textColor = "text-[#92400E]";
+                if (isHighlighted) {
+                  if (highlightType === "insert") {
+                    nodeBorder = "border-[#4B7754]";
+                    nodeBg = "bg-[#E6EFE6]";
+                    textColor = "text-[#2D4B34]";
+                  } else if (highlightType === "delete") {
+                    nodeBorder = "border-[#DC2626]";
+                    nodeBg = "bg-[#FEE2E2]";
+                    textColor = "text-[#991B1B]";
+                  } else {
+                    nodeBorder = "border-[#D97706]";
+                    nodeBg = "bg-[#FEF3C7]";
+                    textColor = "text-[#92400E]";
+                  }
                 }
-              }
 
-              return (
-                <div key={`node-${node.id}`} className="flex items-center">
-                  {/* Node Dual-Compartment Card */}
+                return (
                   <motion.div
+                    key={`node-${node.id}`}
                     layout
                     initial={{ scale: 0.7, opacity: 0 }}
                     animate={{ scale: isHighlighted ? 1.08 : 1, opacity: 1 }}
                     exit={{ scale: 0.5, opacity: 0 }}
                     transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                    onClick={() => onNodeClick && onNodeClick(idx)}
-                    className={`flex items-center overflow-hidden rounded-xl border-2 ${nodeBorder} ${nodeBg} shadow-sm cursor-pointer select-none`}
+                    className="flex items-start shrink-0"
                   >
-                    {/* Data compartment */}
-                    <div className="flex h-14 w-14 items-center justify-center border-r border-[#EEE5DB] font-mono text-base font-bold">
-                      <span className={textColor}>{node.value}</span>
+                    {/* Node Column with Index Label aligned below */}
+                    <div className="flex flex-col items-center">
+                      {/* Node Dual-Compartment Card */}
+                      <div
+                        className={`flex items-center overflow-hidden rounded-xl border-2 ${nodeBorder} ${nodeBg} shadow-sm select-none`}
+                      >
+                        {/* Data compartment */}
+                        <div className="flex h-14 w-14 items-center justify-center border-r border-[#EEE5DB] font-mono text-base font-bold">
+                          <span className={textColor}>{node.value}</span>
+                        </div>
+
+                        {/* Next pointer compartment */}
+                        <div className="flex h-14 w-10 flex-col items-center justify-center bg-[#FAF8F5] px-1 font-mono text-[10px] text-[#8C837B]">
+                          <span className="text-[9px] uppercase tracking-tighter">next</span>
+                          <span className="font-bold text-[#A1764E]">●</span>
+                        </div>
+                      </div>
+
+                      {/* Directly aligned index label */}
+                      <span className="mt-2 font-mono text-[11px] text-[#8C837B]">
+                        Index [{idx}]
+                      </span>
                     </div>
 
-                    {/* Next pointer compartment */}
-                    <div className="flex h-14 w-10 flex-col items-center justify-center bg-[#FAF8F5] px-1 font-mono text-[10px] text-[#8C837B]">
-                      <span className="text-[9px] uppercase tracking-tighter">next</span>
-                      <span className="font-bold text-[#A1764E]">●</span>
+                    {/* Pointer Arrow or Null Terminator */}
+                    <div className="mx-2 flex items-center h-14">
+                      {!isTail ? (
+                        <div className="flex items-center text-[#A1764E]">
+                          <div className="h-0.5 w-6 bg-[#A1764E]" />
+                          <ArrowRight size={14} className="-ml-1" />
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <div className="h-0.5 w-4 bg-[#C5BDB3]" />
+                          <span className="rounded bg-[#F7F2EB] px-2 py-0.5 font-mono text-xs font-semibold text-[#8C837B] border border-[#E8DDD1]">
+                            null
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
-
-                  {/* Pointer Arrow or Null Terminator */}
-                  <div className="mx-2 flex items-center">
-                    {!isTail ? (
-                      <div className="flex items-center text-[#A1764E]">
-                        <div className="h-0.5 w-6 bg-[#A1764E]" />
-                        <ArrowRight size={14} className="-ml-1" />
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5">
-                        <div className="h-0.5 w-4 bg-[#C5BDB3]" />
-                        <span className="rounded bg-[#F7F2EB] px-2 py-0.5 font-mono text-xs font-semibold text-[#8C837B] border border-[#E8DDD1]">
-                          null
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </AnimatePresence>
-        </div>
-      </div>
-
-      {/* Index Position Strip */}
-      <div className="mt-2 flex items-center gap-2 overflow-x-auto pl-16">
-        {nodes.map((_, idx) => (
-          <div key={`index-${idx}`} className="flex w-[100px] justify-center font-mono text-[11px] text-[#8C837B]">
-            Index [{idx}]
+                );
+              })}
+            </AnimatePresence>
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );
