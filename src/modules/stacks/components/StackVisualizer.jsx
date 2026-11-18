@@ -48,8 +48,8 @@ export default function StackVisualizer({
               const val = hasItem ? items[slotIdx] : null;
               const isTop = slotIdx === topIndex;
 
-              let cellBg = "bg-white";
-              let borderColor = "border-[#D8CDBD]";
+              let cellBg;
+              let borderColor;
               let textColor = "text-[#1F1B18]";
 
               if (isTop && highlightTop === "push") {
