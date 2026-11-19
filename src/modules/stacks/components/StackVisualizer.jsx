@@ -8,6 +8,16 @@ export default function StackVisualizer({
 }) {
   const topIndex = items.length - 1;
 
+  const getItemVal = (item) =>
+    item !== null && typeof item === "object" ? item.value : item;
+
+  const getItemId = (item, slotIdx) =>
+    item !== null && typeof item === "object" && item.id != null
+      ? item.id
+      : `elem-${slotIdx}-${getItemVal(item)}`;
+
+  const topValue = topIndex >= 0 ? getItemVal(items[topIndex]) : null;
+
   // We display slot indices from capacity - 1 down to 0 (vertical stack)
   const slots = Array.from({ length: capacity }, (_, i) => capacity - 1 - i);
 
@@ -30,11 +40,16 @@ export default function StackVisualizer({
           </div>
           <div className="rounded-xl border border-[#E8DED2] bg-white px-3 py-1.5 shadow-sm">
             <span className="text-[#8C837B]">Current Top: </span>
-            <strong className="text-[#4B7754]">{topIndex >= 0 ? items[topIndex] : "—"}</strong>
+            <strong className="text-[#4B7754]">{topValue !== null ? topValue : "—"}</strong>
           </div>
-          <div className="rounded-xl border border-[#E8DED2] bg-white px-3 py-1.5 shadow-sm">
+          <div
+            className="rounded-xl border border-[#E8DED2] bg-white px-3 py-1.5 shadow-sm"
+            aria-live="polite"
+            aria-atomic="true"
+          >
             <span className="text-[#8C837B]">Occupancy: </span>
             <strong className="text-[#1F1B18]">{items.length} / {capacity}</strong>
+            <span className="sr-only">Stack contains {items.length} of {capacity} items.</span>
           </div>
         </div>
       </div>
@@ -45,7 +60,9 @@ export default function StackVisualizer({
           <div className="flex flex-col gap-2">
             {slots.map((slotIdx) => {
               const hasItem = slotIdx < items.length;
-              const val = hasItem ? items[slotIdx] : null;
+              const item = hasItem ? items[slotIdx] : null;
+              const val = hasItem ? getItemVal(item) : null;
+              const elemKey = hasItem ? getItemId(item, slotIdx) : `empty-${slotIdx}`;
               const isTop = slotIdx === topIndex;
 
               let cellBg;
@@ -87,7 +104,7 @@ export default function StackVisualizer({
                     <AnimatePresence mode="wait">
                       {val !== null ? (
                         <motion.span
-                          key={`val-${val}-${slotIdx}`}
+                          key={elemKey}
                           initial={{ y: -10, opacity: 0 }}
                           animate={{ y: 0, opacity: 1 }}
                           exit={{ y: -10, opacity: 0 }}
@@ -109,12 +126,15 @@ export default function StackVisualizer({
                       <motion.div
                         initial={{ x: 5, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
+                        role="status"
+                        aria-label={`Top pointer at index ${topIndex}, value is ${val}`}
                         className="flex items-center gap-1 font-mono text-xs font-bold text-[#D97706]"
                       >
-                        <ArrowLeft size={16} className="stroke-[3]" />
+                        <ArrowLeft size={16} className="stroke-[3]" aria-hidden="true" />
                         <span className="rounded bg-[#FEF3C7] px-1.5 py-0.5 text-[10px] text-[#B45309]">
                           TOP
                         </span>
+                        <span className="sr-only">Top pointer pointing to slot index {topIndex}</span>
                       </motion.div>
                     )}
                   </div>
@@ -135,8 +155,8 @@ export default function StackVisualizer({
             <span>Last In, First Out order strictly preserved</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="font-mono font-bold text-[#4B7754]">Time:</span>
-            <span>O(1) Push, Pop &amp; Peek</span>
+            <span className="font-mono font-bold text-[#4B7754]">Theoretical Time:</span>
+            <span>O(1) Push, Pop &amp; Peek (React visualization copies state on render)</span>
           </div>
         </div>
       </div>

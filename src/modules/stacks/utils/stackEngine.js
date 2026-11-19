@@ -3,6 +3,9 @@
  */
 export class ArrayStack {
   constructor(capacity = 7) {
+    if (!Number.isInteger(capacity) || capacity <= 0) {
+      throw new Error("Stack capacity must be a positive integer.");
+    }
     this.capacity = capacity;
     this.items = [];
   }
@@ -29,6 +32,9 @@ export class ArrayStack {
   }
 
   push(value) {
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+      throw new Error("Pushed value must be a valid number.");
+    }
     if (this.isFull()) {
       throw new Error(`Stack Overflow: Capacity of ${this.capacity} reached.`);
     }

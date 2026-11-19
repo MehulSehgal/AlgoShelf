@@ -59,8 +59,6 @@ function App() {
         {/* Stacks */}
         <Route path="/learn/stacks" element={<StacksHome />} />
         <Route path="/learn/stacks/operations" element={<StackPage />} />
-        <Route path="/stacks" element={<StacksHome />} />
-        <Route path="/stacks/operations" element={<StackPage />} />
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />

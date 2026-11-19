@@ -6,10 +6,10 @@ export const STACK_CONCEPTS = [
     example: "Push(10), Push(20) → Pop() yields 20 first.",
   },
   {
-    title: "O(1) Constant Time Operations",
+    title: "O(1) Theoretical Complexity",
     description:
-      "Because all modifications take place exclusively at the top index without shifting remaining elements, Push, Pop, and Peek execute in optimal O(1) time and O(1) auxiliary space.",
-    example: "Top pointer simply increments upon Push and decrements upon Pop.",
+      "In standard algorithmic models, modifications occur strictly at the top boundary without shifting neighboring elements, granting theoretical O(1) time and O(1) auxiliary space for Push, Pop, and Peek. (Note: in interactive React visualizers, immutable UI state updates create array copies, introducing an O(n) rendering overhead).",
+    example: "Theoretical top pointer increments upon Push and decrements upon Pop in O(1).",
   },
   {
     title: "Stack Overflow & Underflow",

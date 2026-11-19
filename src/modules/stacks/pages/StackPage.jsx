@@ -1,16 +1,33 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import Footer from "../../../components/Footer";
 import StackVisualizer from "../components/StackVisualizer";
 import StackControls from "../components/StackControls";
 import StackStepExplanation from "../components/StackStepExplanation";
+import { ArrayStack } from "../utils/stackEngine";
 import { INITIAL_STACK_ELEMENTS, DEFAULT_STACK_CAPACITY } from "../data/stackData";
 
 export default function StackPage() {
   const capacity = DEFAULT_STACK_CAPACITY;
-  const [items, setItems] = useState([...INITIAL_STACK_ELEMENTS]);
+  const nextIdRef = useRef(0);
+  const timerRef = useRef(null);
+
+  // Initialize backing ArrayStack engine instance
+  const stackRef = useRef(null);
+  if (!stackRef.current) {
+    stackRef.current = new ArrayStack(capacity);
+    INITIAL_STACK_ELEMENTS.forEach((val) => stackRef.current.push(val));
+  }
+
+  const [items, setItems] = useState(() =>
+    INITIAL_STACK_ELEMENTS.map((val) => ({
+      id: `stack-item-${nextIdRef.current++}`,
+      value: val,
+    }))
+  );
   const [highlightTop, setHighlightTop] = useState(null);
+  const [isAnimating, setIsAnimating] = useState(false);
   const [error, setError] = useState(null);
   const [lastAction, setLastAction] = useState({
     type: "ready",
@@ -18,75 +35,141 @@ export default function StackPage() {
     pointerFormula: `Top = [${INITIAL_STACK_ELEMENTS.length - 1}]`,
   });
 
+  const clearTimer = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  // Timer cleanup on unmount
+  useEffect(() => {
+    return () => clearTimer();
+  }, []);
+
   const isFull = items.length >= capacity;
   const isEmpty = items.length === 0;
 
   const handlePush = (value) => {
-    if (isFull) {
-      setError(`Stack Overflow! Cannot push ${value}: maximum capacity (${capacity}) reached.`);
-      return;
+    if (isAnimating) return false;
+
+    clearTimer();
+    setError(null);
+
+    // Delegate to ArrayStack engine with safe try-catch
+    try {
+      stackRef.current.push(value);
+    } catch (err) {
+      setError(err.message);
+      return false;
     }
 
-    setError(null);
-    const newItems = [...items, value];
+    const newItems = [
+      ...items,
+      { id: `stack-item-${nextIdRef.current++}`, value },
+    ];
     setItems(newItems);
     setHighlightTop("push");
+    setIsAnimating(true);
     setLastAction({
       type: "push",
       message: `Pushed value ${value} onto the stack. Top pointer incremented.`,
       pointerFormula: `top = top + 1 = ${newItems.length - 1}`,
     });
 
-    setTimeout(() => setHighlightTop(null), 800);
+    timerRef.current = setTimeout(() => {
+      setHighlightTop(null);
+      setIsAnimating(false);
+      timerRef.current = null;
+    }, 600);
+
+    return true;
   };
 
   const handlePop = () => {
+    if (isAnimating) return;
+
     if (isEmpty) {
       setError("Stack Underflow! Cannot pop from an empty stack.");
       return;
     }
 
+    clearTimer();
     setError(null);
-    const poppedValue = items[items.length - 1];
     setHighlightTop("pop");
+    setIsAnimating(true);
 
-    setTimeout(() => {
-      const newItems = items.slice(0, -1);
-      setItems(newItems);
-      setHighlightTop(null);
-      setLastAction({
-        type: "pop",
-        message: `Popped value ${poppedValue} from the top. Top pointer decremented.`,
-        pointerFormula: `top = top - 1 = ${newItems.length - 1}`,
-      });
-    }, 300);
+    timerRef.current = setTimeout(() => {
+      try {
+        const poppedValue = stackRef.current.pop();
+        setItems((prevItems) => {
+          const newItems = prevItems.slice(0, -1);
+          setLastAction({
+            type: "pop",
+            message: `Popped value ${poppedValue} from the top. Top pointer decremented.`,
+            pointerFormula: `top = top - 1 = ${newItems.length - 1}`,
+          });
+          return newItems;
+        });
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setHighlightTop(null);
+        setIsAnimating(false);
+        timerRef.current = null;
+      }
+    }, 350);
   };
 
   const handlePeek = () => {
+    if (isAnimating) return;
+
     if (isEmpty) {
       setError("Cannot peek: stack is empty.");
       return;
     }
 
+    clearTimer();
     setError(null);
-    setHighlightTop("peek");
-    const topValue = items[items.length - 1];
-    setLastAction({
-      type: "peek",
-      message: `Current top value is ${topValue} at index [${items.length - 1}].`,
-      pointerFormula: `items[top] = items[${items.length - 1}] = ${topValue}`,
-    });
 
-    setTimeout(() => setHighlightTop(null), 800);
+    try {
+      const topValue = stackRef.current.peek();
+      setHighlightTop("peek");
+      setIsAnimating(true);
+      setLastAction({
+        type: "peek",
+        message: `Current top value is ${topValue} at index [${items.length - 1}].`,
+        pointerFormula: `items[top] = items[${items.length - 1}] = ${topValue}`,
+      });
+
+      timerRef.current = setTimeout(() => {
+        setHighlightTop(null);
+        setIsAnimating(false);
+        timerRef.current = null;
+      }, 700);
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   const handleReset = () => {
-    setItems([...INITIAL_STACK_ELEMENTS]);
+    clearTimer();
+    setIsAnimating(false);
+
+    const newStack = new ArrayStack(capacity);
+    INITIAL_STACK_ELEMENTS.forEach((val) => newStack.push(val));
+    stackRef.current = newStack;
+
+    const initialItems = INITIAL_STACK_ELEMENTS.map((val) => ({
+      id: `stack-item-${nextIdRef.current++}`,
+      value: val,
+    }));
+    setItems(initialItems);
     setHighlightTop(null);
     setError(null);
     setLastAction({
       type: "ready",
-      message: "Reset stack to initial configuration.",
+      message: `Reset stack to initial configuration with ${INITIAL_STACK_ELEMENTS.length} elements.`,
       pointerFormula: `Top = [${INITIAL_STACK_ELEMENTS.length - 1}]`,
     });
   };
@@ -131,6 +214,7 @@ export default function StackPage() {
             onReset={handleReset}
             isFull={isFull}
             isEmpty={isEmpty}
+            isAnimating={isAnimating}
             error={error}
           />
         </section>
@@ -175,10 +259,10 @@ export default function StackPage() {
             </div>
             <div className="rounded-2xl border border-[#EEE5DB] bg-white p-5">
               <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#4B7754]">
-                True O(1) Operations
+                Theoretical O(1) Complexity
               </span>
               <p className="mt-2 text-sm leading-6 text-[#6B645D]">
-                Because push, pop, and peek only interact with the top pointer (<code className="font-mono text-[#D97706]">top = items.length - 1</code>), no elements ever need to be shifted in memory.
+                In true array-backed or linked stack implementations, push, pop, and peek only modify the top boundary (<code className="font-mono text-[#D97706]">top = items.length - 1</code>) without shifting elements, guaranteeing optimal <code className="font-mono text-[#4B7754]">O(1)</code> time. In this React visualizer, immutable state updates create array copies to trigger UI re-renders, introducing an <code className="font-mono text-[#D97706]">O(n)</code> visualization cost.
               </p>
             </div>
           </div>

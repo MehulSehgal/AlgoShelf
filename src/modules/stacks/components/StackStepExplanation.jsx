@@ -34,7 +34,8 @@ export default function StackStepExplanation({
         </div>
 
         <p className="mt-3 text-sm leading-relaxed text-[#4A3B32]">
-          {lastAction?.message || "Perform a Push, Pop, or Peek operation to trace the top pointer advance and stack state."}
+          {lastAction?.message ||
+            "Perform a Push, Pop, or Peek operation to trace the top pointer advance and stack state."}
         </p>
 
         {lastAction?.pointerFormula && (
@@ -50,36 +51,48 @@ export default function StackStepExplanation({
         <div className="flex items-center gap-2 text-[#A1764E]">
           <Gauge size={16} />
           <h4 className="font-display text-sm font-semibold uppercase tracking-wider text-[#1F1B18]">
-            Stack State &amp; Time Complexity
+            Stack State &amp; Complexity
           </h4>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-3 font-mono text-xs">
-          <div className="rounded-xl border border-[#EEE5DB] bg-white p-3">
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2.5 font-mono text-xs">
+          <div className="col-span-2 sm:col-span-1 rounded-xl border border-[#EEE5DB] bg-white p-3">
             <span className="text-[11px] text-[#8C837B] uppercase tracking-wider">Status</span>
             <p className="mt-1 font-bold text-[#1F1B18]">
               {isFull ? (
                 <span className="text-[#DC2626]">FULL (Overflow Risk)</span>
               ) : isEmpty ? (
-                <span className="text-[#D97706]">EMPTY (Underflow)</span>
+                <span className="text-[#D97706]">EMPTY (No elements)</span>
               ) : (
                 <span className="text-[#4B7754]">Ready ({capacity - size} free)</span>
               )}
             </p>
           </div>
+
           <div className="rounded-xl border border-[#EEE5DB] bg-white p-3">
             <span className="text-[11px] text-[#8C837B] uppercase tracking-wider">Push Time</span>
-            <p className="mt-1 text-base font-bold text-[#4B7754]">O(1)</p>
+            <p className="mt-1 text-base font-bold text-[#4B7754]">O(1)*</p>
           </div>
+
           <div className="rounded-xl border border-[#EEE5DB] bg-white p-3">
             <span className="text-[11px] text-[#8C837B] uppercase tracking-wider">Pop Time</span>
-            <p className="mt-1 text-base font-bold text-[#4B7754]">O(1)</p>
+            <p className="mt-1 text-base font-bold text-[#4B7754]">O(1)*</p>
           </div>
+
           <div className="rounded-xl border border-[#EEE5DB] bg-white p-3">
+            <span className="text-[11px] text-[#8C837B] uppercase tracking-wider">Peek Time</span>
+            <p className="mt-1 text-base font-bold text-[#4B7754]">O(1)*</p>
+          </div>
+
+          <div className="col-span-2 sm:col-span-2 rounded-xl border border-[#EEE5DB] bg-white p-3">
             <span className="text-[11px] text-[#8C837B] uppercase tracking-wider">Space Complexity</span>
             <p className="mt-1 text-base font-bold text-[#A1764E]">O(n)</p>
           </div>
         </div>
+
+        <p className="mt-3 text-[11px] leading-relaxed text-[#8C837B] italic">
+          * O(1) indicates theoretical stack complexity. React component state creates array copies during updates for UI reactivity.
+        </p>
       </div>
     </div>
   );

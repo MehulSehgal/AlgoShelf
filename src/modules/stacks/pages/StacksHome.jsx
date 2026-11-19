@@ -14,8 +14,8 @@ export default function StacksHome() {
       chapter: "Chapter I",
       title: "Stack Operations & Frame Trace",
       description:
-        "Push, pop, and peek operations demonstrating the Last In, First Out (LIFO) principle with overflow and underflow safeguards.",
-      complexity: "O(1)",
+        "Push, pop, and peek operations demonstrating theoretical O(1) complexity and the Last In, First Out (LIFO) principle with overflow and underflow safeguards.",
+      complexity: "O(1) (Theoretical)",
       difficulty: "Beginner",
       path: "/learn/stacks/operations",
     },
@@ -37,6 +37,8 @@ export default function StacksHome() {
       block: "start",
     });
   };
+
+  const activeConcept = STACK_CONCEPTS[activeTab] || STACK_CONCEPTS[0];
 
   return (
     <div className="min-h-screen bg-[#F7F5F2] text-[#1F1B18]">
@@ -92,7 +94,7 @@ export default function StacksHome() {
                   </span>
                 </div>
                 <span className="rounded-full bg-[#E9EDF5] px-3 py-1 font-mono text-xs font-semibold text-[#5A7088]">
-                  O(1) Boundary
+                  Theoretical O(1) Boundary
                 </span>
               </div>
 
@@ -134,11 +136,18 @@ export default function StacksHome() {
           </div>
 
           <div className="rounded-[30px] border border-[#E8DED2] bg-[#FCFAF7] p-8 shadow-sm max-w-4xl mx-auto">
-            <div className="flex flex-wrap justify-center gap-2.5">
+            <div
+              role="tablist"
+              aria-label="Core stack principles"
+              className="flex flex-wrap justify-center gap-2.5"
+            >
               {STACK_CONCEPTS.map((concept, index) => (
                 <button
                   key={concept.title}
                   type="button"
+                  role="tab"
+                  aria-selected={activeTab === index}
+                  aria-pressed={activeTab === index}
                   onClick={() => setActiveTab(index)}
                   className={`rounded-full px-5 py-2 text-sm font-medium transition-all duration-300 ${
                     activeTab === index
@@ -161,17 +170,17 @@ export default function StacksHome() {
                 className="mt-8 rounded-2xl bg-white p-7"
               >
                 <h3 className="font-display text-2xl text-[#202020]">
-                  {STACK_CONCEPTS[activeTab].title}
+                  {activeConcept.title}
                 </h3>
                 <p className="mt-3 text-base leading-7 text-[#666]">
-                  {STACK_CONCEPTS[activeTab].description}
+                  {activeConcept.description}
                 </p>
                 <div className="mt-6 rounded-xl bg-[#F7F5F2] p-4 border border-[#ECE3D8]">
                   <p className="text-xs font-semibold uppercase tracking-wider text-[#5A7088]">
                     Insight
                   </p>
                   <p className="mt-1 font-mono text-xs text-[#555]">
-                    {STACK_CONCEPTS[activeTab].example}
+                    {activeConcept.example}
                   </p>
                 </div>
               </motion.div>
@@ -179,8 +188,8 @@ export default function StacksHome() {
           </div>
         </section>
 
-        {/* Chapters Section */}
-        <section id="stack-chapters" className="pt-20">
+        {/* Chapters Section with scroll-margin */}
+        <section id="stack-chapters" className="pt-20 scroll-mt-20">
           <div className="mx-auto mb-14 max-w-3xl text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#5A7088]">
               Chapters
