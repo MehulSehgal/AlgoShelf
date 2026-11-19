@@ -59,8 +59,6 @@ function App() {
         {/* Queues & Linear Structures */}
         <Route path="/learn/queues" element={<QueuesHome />} />
         <Route path="/learn/queues/operations" element={<QueuePage />} />
-        <Route path="/queues" element={<QueuesHome />} />
-        <Route path="/queues/operations" element={<QueuePage />} />
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />

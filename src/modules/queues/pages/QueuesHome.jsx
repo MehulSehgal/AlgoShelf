@@ -21,12 +21,12 @@ export default function QueuesHome() {
     },
     {
       chapter: "Chapter II",
-      title: "Stack (LIFO)",
+      title: "Priority Queue",
       description:
-        "Push, pop, and peek operations simulating call stacks and reverse-polish evaluators.",
-      complexity: "O(1)",
-      difficulty: "Beginner",
-      path: "/learn/stacks",
+        "Elements are served by priority rather than arrival order. Explore min-heap and max-heap backed implementations.",
+      complexity: "O(log n)",
+      difficulty: "Intermediate",
+      path: "/learn/queues/priority",
       comingSoon: true,
     },
   ];
@@ -37,6 +37,8 @@ export default function QueuesHome() {
       block: "start",
     });
   };
+
+  const activeConcept = QUEUE_CONCEPTS[activeTab] || QUEUE_CONCEPTS[0];
 
   return (
     <div className="min-h-screen bg-[#F7F5F2] text-[#1F1B18]">
@@ -60,7 +62,7 @@ export default function QueuesHome() {
             </h1>
 
             <p className="font-editorial mt-6 max-w-lg text-xl italic leading-relaxed text-[#6B5B4D]">
-              “Order in entry, order in exit. The first to wait is the first to be served.”
+              "Order in entry, order in exit. The first to wait is the first to be served."
             </p>
 
             <p className="mt-4 max-w-xl text-base leading-7 text-[#6B645D]">
@@ -110,7 +112,7 @@ export default function QueuesHome() {
 
               <div className="mt-6 flex items-center justify-between rounded-xl bg-[#F7F2EB] p-3 text-xs text-[#6B5B4D]">
                 <span className="font-mono text-[#D97706] font-bold">← Dequeue (Front)</span>
-                <span className="font-mono text-[#4B7754] font-bold">Enqueue (Rear) ←</span>
+                <span className="font-mono text-[#4B7754] font-bold">Enqueue (Rear) →</span>
               </div>
             </div>
           </div>
@@ -128,11 +130,18 @@ export default function QueuesHome() {
           </div>
 
           <div className="rounded-[30px] border border-[#E8DED2] bg-[#FCFAF7] p-8 shadow-sm max-w-4xl mx-auto">
-            <div className="flex flex-wrap justify-center gap-2.5">
+            <div
+              role="tablist"
+              aria-label="Core queue principles"
+              className="flex flex-wrap justify-center gap-2.5"
+            >
               {QUEUE_CONCEPTS.map((concept, index) => (
                 <button
                   key={concept.title}
                   type="button"
+                  role="tab"
+                  aria-selected={activeTab === index}
+                  aria-pressed={activeTab === index}
                   onClick={() => setActiveTab(index)}
                   className={`rounded-full px-5 py-2 text-sm font-medium transition-all duration-300 ${
                     activeTab === index
@@ -155,17 +164,17 @@ export default function QueuesHome() {
                 className="mt-8 rounded-2xl bg-white p-7"
               >
                 <h3 className="font-display text-2xl text-[#202020]">
-                  {QUEUE_CONCEPTS[activeTab].title}
+                  {activeConcept.title}
                 </h3>
                 <p className="mt-3 text-base leading-7 text-[#666]">
-                  {QUEUE_CONCEPTS[activeTab].description}
+                  {activeConcept.description}
                 </p>
                 <div className="mt-6 rounded-xl bg-[#F7F5F2] p-4 border border-[#ECE3D8]">
                   <p className="text-xs font-semibold uppercase tracking-wider text-[#5A7088]">
                     Insight
                   </p>
                   <p className="mt-1 font-mono text-xs text-[#555]">
-                    {QUEUE_CONCEPTS[activeTab].example}
+                    {activeConcept.example}
                   </p>
                 </div>
               </motion.div>
@@ -174,7 +183,7 @@ export default function QueuesHome() {
         </section>
 
         {/* Chapters Section */}
-        <section id="queue-chapters" className="pt-20">
+        <section id="queue-chapters" className="pt-20 scroll-mt-20">
           <div className="mx-auto mb-14 max-w-3xl text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#5A7088]">
               Chapters

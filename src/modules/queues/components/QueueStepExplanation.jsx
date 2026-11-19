@@ -34,7 +34,8 @@ export default function QueueStepExplanation({
         </div>
 
         <p className="mt-3 text-sm leading-relaxed text-[#4A3B32]">
-          {lastAction?.message || "Perform an Enqueue, Dequeue, or Peek operation to trace pointer advances and array updates."}
+          {lastAction?.message ||
+            "Perform an Enqueue, Dequeue, or Peek operation to trace pointer advances and array updates."}
         </p>
 
         {lastAction?.formula && (
@@ -55,13 +56,13 @@ export default function QueueStepExplanation({
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-3 font-mono text-xs">
-          <div className="rounded-xl border border-[#EEE5DB] bg-white p-3">
+          <div className="col-span-2 rounded-xl border border-[#EEE5DB] bg-white p-3">
             <span className="text-[11px] text-[#8C837B] uppercase tracking-wider">Status</span>
             <p className="mt-1 font-bold text-[#1F1B18]">
               {isFull ? (
                 <span className="text-[#DC2626]">FULL (Overflow Risk)</span>
               ) : isEmpty ? (
-                <span className="text-[#D97706]">EMPTY (Underflow)</span>
+                <span className="text-[#D97706]">EMPTY (No elements)</span>
               ) : (
                 <span className="text-[#4B7754]">Ready ({capacity - size} free)</span>
               )}
@@ -70,10 +71,22 @@ export default function QueueStepExplanation({
           <div className="rounded-xl border border-[#EEE5DB] bg-white p-3">
             <span className="text-[11px] text-[#8C837B] uppercase tracking-wider">Enqueue Time</span>
             <p className="mt-1 text-base font-bold text-[#4B7754]">O(1)</p>
+            <p className="mt-0.5 text-[10px] text-[#8C837B]">Circular index advance</p>
           </div>
           <div className="rounded-xl border border-[#EEE5DB] bg-white p-3">
             <span className="text-[11px] text-[#8C837B] uppercase tracking-wider">Dequeue Time</span>
             <p className="mt-1 text-base font-bold text-[#4B7754]">O(1)</p>
+            <p className="mt-0.5 text-[10px] text-[#8C837B]">No element shifting</p>
+          </div>
+          <div className="rounded-xl border border-[#EEE5DB] bg-white p-3">
+            <span className="text-[11px] text-[#8C837B] uppercase tracking-wider">Peek Front Time</span>
+            <p className="mt-1 text-base font-bold text-[#4B7754]">O(1)</p>
+            <p className="mt-0.5 text-[10px] text-[#8C837B]">Direct buffer[front] read</p>
+          </div>
+          <div className="rounded-xl border border-[#EEE5DB] bg-white p-3">
+            <span className="text-[11px] text-[#8C837B] uppercase tracking-wider">Peek Rear Time</span>
+            <p className="mt-1 text-base font-bold text-[#4B7754]">O(1)</p>
+            <p className="mt-0.5 text-[10px] text-[#8C837B]">Direct buffer[rear] read</p>
           </div>
           <div className="rounded-xl border border-[#EEE5DB] bg-white p-3">
             <span className="text-[11px] text-[#8C837B] uppercase tracking-wider">Space Complexity</span>

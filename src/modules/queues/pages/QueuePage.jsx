@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import Footer from "../../../components/Footer";
@@ -7,127 +7,184 @@ import QueueControls from "../components/QueueControls";
 import QueueStepExplanation from "../components/QueueStepExplanation";
 import { INITIAL_QUEUE_ELEMENTS, DEFAULT_QUEUE_CAPACITY } from "../data/queueData";
 
-export default function QueuePage() {
-  const capacity = DEFAULT_QUEUE_CAPACITY;
+// Guard: ensure initial elements never exceed capacity
+const capacity = DEFAULT_QUEUE_CAPACITY;
+const safeInitial = INITIAL_QUEUE_ELEMENTS.slice(0, capacity);
 
-  // Initialize buffer with starting elements
-  const [buffer, setBuffer] = useState(() => {
-    const arr = Array(capacity).fill(null);
-    INITIAL_QUEUE_ELEMENTS.forEach((val, idx) => {
-      arr[idx] = val;
-    });
-    return arr;
+let nextId = 0;
+const makeId = () => `q-item-${nextId++}`;
+
+function buildInitialBuffer(initElems, cap) {
+  const arr = Array(cap).fill(null);
+  initElems.forEach((val, idx) => {
+    arr[idx] = { id: makeId(), value: val };
   });
+  return arr;
+}
 
+export default function QueuePage() {
+  const timerRef = useRef(null);
+
+  const [buffer, setBuffer] = useState(() => buildInitialBuffer(safeInitial, capacity));
   const [front, setFront] = useState(0);
-  const [rear, setRear] = useState(INITIAL_QUEUE_ELEMENTS.length - 1);
-  const [size, setSize] = useState(INITIAL_QUEUE_ELEMENTS.length);
+  const [rear, setRear] = useState(safeInitial.length - 1);
+  const [size, setSize] = useState(safeInitial.length);
   const [error, setError] = useState(null);
+  const [isAnimating, setIsAnimating] = useState(false);
   const [highlightIndices, setHighlightIndices] = useState({});
   const [lastAction, setLastAction] = useState({
     type: "ready",
-    message: `Initialized queue with ${INITIAL_QUEUE_ELEMENTS.length} elements in a circular array buffer of capacity ${capacity}.`,
+    message: `Initialized queue with ${safeInitial.length} elements in a circular array buffer of capacity ${capacity}.`,
     formula: null,
   });
+
+  const clearTimer = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  // Cancel any pending timers on unmount
+  useEffect(() => {
+    return () => clearTimer();
+  }, []);
 
   const isFull = size === capacity;
   const isEmpty = size === 0;
 
   const handleEnqueue = (value) => {
-    if (isFull) {
-      setError(`Queue Overflow! Cannot enqueue ${value}: capacity of ${capacity} reached.`);
-      return;
-    }
+    if (isAnimating || isFull) return false;
 
     setError(null);
-    const nextRear = size === 0 ? front : (rear + 1) % capacity;
-    const newBuffer = [...buffer];
-    newBuffer[nextRear] = value;
+    clearTimer();
 
-    setBuffer(newBuffer);
+    const nextRear = size === 0 ? front : (rear + 1) % capacity;
+    const newItem = { id: makeId(), value };
+
+    setBuffer((prev) => {
+      const updated = [...prev];
+      updated[nextRear] = newItem;
+      return updated;
+    });
     setRear(nextRear);
     setSize((prev) => prev + 1);
     setHighlightIndices({ [nextRear]: "enqueue" });
+    setIsAnimating(true);
     setLastAction({
       type: "enqueue",
       message: `Enqueued ${value} at rear index [${nextRear}].`,
       formula: `rear = (rear + 1) % ${capacity} = ${nextRear}`,
     });
 
-    setTimeout(() => setHighlightIndices({}), 800);
+    timerRef.current = setTimeout(() => {
+      setHighlightIndices({});
+      setIsAnimating(false);
+      timerRef.current = null;
+    }, 600);
+
+    return true;
   };
 
   const handleDequeue = () => {
-    if (isEmpty) {
-      setError("Queue Underflow! Cannot dequeue from an empty queue.");
+    if (isAnimating || isEmpty) {
+      if (isEmpty) setError("Queue Underflow! Cannot dequeue from an empty queue.");
       return;
     }
 
     setError(null);
-    const dequeuedValue = buffer[front];
-    const newBuffer = [...buffer];
-    newBuffer[front] = null;
+    clearTimer();
 
-    setBuffer(newBuffer);
-    setHighlightIndices({ [front]: "dequeue" });
+    // Capture the current front/size values before the async update
+    const currentFront = front;
+    const dequeuedCell = buffer[currentFront];
+    const dequeuedValue = dequeuedCell?.value ?? dequeuedCell;
+    const nextFront = (currentFront + 1) % capacity;
 
-    const nextFront = (front + 1) % capacity;
-    setFront(nextFront);
-    setSize((prev) => prev - 1);
+    setHighlightIndices({ [currentFront]: "dequeue" });
+    setIsAnimating(true);
 
-    setLastAction({
-      type: "dequeue",
-      message: `Dequeued value ${dequeuedValue} from front index [${front}].`,
-      formula: `front = (front + 1) % ${capacity} = ${nextFront}`,
-    });
-
-    setTimeout(() => setHighlightIndices({}), 800);
+    timerRef.current = setTimeout(() => {
+      setBuffer((prev) => {
+        const updated = [...prev];
+        updated[currentFront] = null;
+        return updated;
+      });
+      setFront(nextFront);
+      setSize((prev) => prev - 1);
+      setLastAction({
+        type: "dequeue",
+        message: `Dequeued value ${dequeuedValue} from front index [${currentFront}].`,
+        formula: `front = (front + 1) % ${capacity} = ${nextFront}`,
+      });
+      setHighlightIndices({});
+      setIsAnimating(false);
+      timerRef.current = null;
+    }, 350);
   };
 
   const handlePeekFront = () => {
-    if (isEmpty) {
-      setError("Cannot peek front: queue is empty.");
+    if (isAnimating || isEmpty) {
+      if (isEmpty) setError("Cannot peek front: queue is empty.");
       return;
     }
     setError(null);
+    clearTimer();
+
+    const cell = buffer[front];
+    const val = cell?.value ?? cell;
     setHighlightIndices({ [front]: "peek" });
+    setIsAnimating(true);
     setLastAction({
       type: "peek",
-      message: `Front item is ${buffer[front]} located at index [${front}].`,
-      formula: `Read buffer[front] = ${buffer[front]}`,
+      message: `Front item is ${val} located at index [${front}].`,
+      formula: `Read buffer[front] = buffer[${front}] = ${val}`,
     });
-    setTimeout(() => setHighlightIndices({}), 800);
+
+    timerRef.current = setTimeout(() => {
+      setHighlightIndices({});
+      setIsAnimating(false);
+      timerRef.current = null;
+    }, 700);
   };
 
   const handlePeekRear = () => {
-    if (isEmpty) {
-      setError("Cannot peek rear: queue is empty.");
+    if (isAnimating || isEmpty) {
+      if (isEmpty) setError("Cannot peek rear: queue is empty.");
       return;
     }
     setError(null);
+    clearTimer();
+
+    const cell = buffer[rear];
+    const val = cell?.value ?? cell;
     setHighlightIndices({ [rear]: "peek" });
+    setIsAnimating(true);
     setLastAction({
       type: "peek",
-      message: `Rear item is ${buffer[rear]} located at index [${rear}].`,
-      formula: `Read buffer[rear] = ${buffer[rear]}`,
+      message: `Rear item is ${val} located at index [${rear}].`,
+      formula: `Read buffer[rear] = buffer[${rear}] = ${val}`,
     });
-    setTimeout(() => setHighlightIndices({}), 800);
+
+    timerRef.current = setTimeout(() => {
+      setHighlightIndices({});
+      setIsAnimating(false);
+      timerRef.current = null;
+    }, 700);
   };
 
   const handleReset = () => {
-    const arr = Array(capacity).fill(null);
-    INITIAL_QUEUE_ELEMENTS.forEach((val, idx) => {
-      arr[idx] = val;
-    });
-    setBuffer(arr);
+    clearTimer();
+    setIsAnimating(false);
+    setBuffer(buildInitialBuffer(safeInitial, capacity));
     setFront(0);
-    setRear(INITIAL_QUEUE_ELEMENTS.length - 1);
-    setSize(INITIAL_QUEUE_ELEMENTS.length);
+    setRear(safeInitial.length - 1);
+    setSize(safeInitial.length);
     setError(null);
     setHighlightIndices({});
     setLastAction({
       type: "ready",
-      message: "Reset queue to initial state.",
+      message: `Reset queue to initial state with ${safeInitial.length} elements.`,
       formula: null,
     });
   };
@@ -159,7 +216,7 @@ export default function QueuePage() {
 
           <p className="mt-4 max-w-3xl text-base leading-7 text-[#6B645D] md:text-lg">
             Experience the First In, First Out (FIFO) discipline implemented via an optimal circular
-            array (ring buffer). Observe modulo arithmetic preventing $O(n)$ element shifting on every dequeue.
+            array (ring buffer). Observe modulo arithmetic preventing O(n) element shifting on every dequeue.
           </p>
         </header>
 
@@ -173,6 +230,7 @@ export default function QueuePage() {
             onReset={handleReset}
             isFull={isFull}
             isEmpty={isEmpty}
+            isAnimating={isAnimating}
             error={error}
           />
         </section>
@@ -186,7 +244,6 @@ export default function QueuePage() {
             rear={rear}
             size={size}
             highlightIndices={highlightIndices}
-            lastAction={lastAction}
           />
         </section>
 
@@ -216,7 +273,7 @@ export default function QueuePage() {
                 Naive Array Implementation: O(n) Dequeue
               </span>
               <p className="mt-2 text-sm leading-6 text-[#6B645D]">
-                In a fixed-front array, removing the 0th element forces all subsequent $n - 1$ items to shift left by one slot. For large collections, continuous dequeues create major CPU memory copying bottlenecks.
+                In a fixed-front array, removing the 0th element forces all subsequent n − 1 items to shift left by one slot. For large collections, continuous dequeues create major CPU memory copying bottlenecks.
               </p>
             </div>
             <div className="rounded-2xl border border-[#EEE5DB] bg-white p-5">
@@ -224,7 +281,10 @@ export default function QueuePage() {
                 Circular Array (Ring Buffer): O(1) Dequeue
               </span>
               <p className="mt-2 text-sm leading-6 text-[#6B645D]">
-                By advancing the <code className="font-mono text-[#D97706]">front</code> pointer with <code className="font-mono text-[#1F1B18]">(front + 1) % capacity</code>, no memory shifts occur. Both Enqueue and Dequeue operations achieve instantaneous $O(1)$ constant time.
+                By advancing the <code className="font-mono text-[#D97706]">front</code> pointer with{" "}
+                <code className="font-mono text-[#1F1B18]">(front + 1) % capacity</code>, no memory shifts
+                occur. Both Enqueue and Dequeue operations achieve O(1) constant time. Note: in this React
+                visualization, state updates copy the buffer array for UI reactivity, introducing O(n) rendering overhead.
               </p>
             </div>
           </div>

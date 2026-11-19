@@ -8,7 +8,7 @@ export const QUEUE_CONCEPTS = [
   {
     title: "Circular Array (Ring Buffer)",
     description:
-      "To avoid $O(n)$ element shifting during dequeue operations, circular array queues advance Front and Rear pointers using modulo arithmetic: index = (index + 1) % capacity. Both Enqueue and Dequeue execute in instantaneous $O(1)$ time.",
+      "To avoid O(n) element shifting during dequeue operations, circular array queues advance Front and Rear pointers using modulo arithmetic: index = (index + 1) % capacity. Both Enqueue and Dequeue execute in O(1) constant time.",
     example: "Rear = (Rear + 1) % Capacity; Front = (Front + 1) % Capacity",
   },
   {
@@ -20,8 +20,9 @@ export const QUEUE_CONCEPTS = [
   {
     title: "Peek (Front & Rear Inspection)",
     description:
-      "The Peek/Front operation reads the value of the earliest added item without removing it, while Rear inspection checks the most recently enqueued item. Both operate in $O(1)$ time and $O(1)$ space.",
-    example: "Front element is accessed directly via queue[front].",
+      "Peek Front reads the value of the earliest-added item at the front boundary without removing it. Peek Rear reads the most recently enqueued item at the rear boundary, also without removing it. Both operations are non-destructive and execute in O(1) time and O(1) auxiliary space.",
+    example:
+      "Peek Front: buffer[front] — reads first element. Peek Rear: buffer[rear] — reads last element.",
   },
 ];
 
